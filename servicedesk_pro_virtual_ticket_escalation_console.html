@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ServiceDesk Pro // Tier 1 Operations & Escalation Console</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    /* Custom scrollbar for crisp enterprise ITSM feel */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    @keyframes pulseRing {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.08); opacity: 0.85; }
+    }
+    .annotation-badge {
+      animation: pulseRing 2.2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- Top Enterprise Navigation Bar -->
+  <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 shadow-md">
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+      <!-- Brand Identity -->
+      <div class="flex items-center gap-3 relative">
+        <div class="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-400/40 flex items-center justify-center text-sky-400 shadow-inner">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-base sm:text-lg tracking-tight text-white">ServiceDesk Pro</span>
+            <span class="text-slate-500 font-mono text-sm hidden sm:inline">//</span>
+            <span class="text-sky-400 font-medium text-xs sm:text-sm hidden sm:inline">Tier 1 Operations &amp; Escalation Console</span>
+          </div>
+          <p class="text-[11px] text-slate-400 font-mono">QUEUE: ENT-SD-TIER1-GLOBAL &bull; ITIL v4 INCIDENT TRIAGE ENGINE</p>
+        </div>
+        <!-- Annotation 1 -->
+        <span data-annotation="1" title="1. Global ITSM Workspace & Queue Context Header" class="annotation-badge hidden absolute -bottom-3 left-2 bg-rose-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-lg border-2 border-white z-40 cursor-help">1</span>
+      </div>
+
+      <!-- Global Action Buttons -->
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+        <button id="btnToggleAnnotations" type="button" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 transition cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+          </svg>
+          <span id="annotationBtnLabel">Toggle Dashboard Annotations</span>
+        </button>
+
+        <button id="btnOpenAuditLog" type="button" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-sky-600 hover:bg-sky-500 text-white shadow-sm transition cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span>Escalation Audit Log (<span id="auditCountBadge">0</span>)</span>
+        </button>
+
+        <button id="btnResetSimulation" type="button" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-rose-950/80 text-slate-200 hover:text-rose-200 border border-slate-700 hover:border-rose-700 transition cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span>Reset Simulation</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Collapsible Annotation Legend Banner -->
+    <div id="annotationLegend" class="hidden bg-rose-950/95 border-t border-rose-800 text-rose-100 px-4 sm:px-6 py-2.5 text-xs">
+      <div class="max-w-[1600px] mx-auto flex flex-wrap items-center gap-x-6 gap-y-1.5">
+        <span class="font-bold uppercase tracking-wider text-rose-300 flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-rose-400 animate-ping"></span>
+          Dashboard Documentation Callouts Active:
+        </span>
+        <span><strong class="bg-rose-600 text-white px-1.5 py-0.2 rounded mr-1">1</strong>Workspace &amp; Queue Identity</span>
+        <span><strong class="bg-rose-600 text-white px-1.5 py-0.2 rounded mr-1">2</strong>Live KPI &amp; SLA Telemetry Bar</span>
+        <span><strong class="bg-rose-600 text-white px-1.5 py-0.2 rounded mr-1">3</strong>Priority Filter &amp; Search Controls</span>
+        <span><strong class="bg-rose-600 text-white px-1.5 py-0.2 rounded mr-1">4</strong>Prioritized Incident Queue &amp; SLA Timers</span>
+        <span><strong class="bg-rose-600 text-white px-1.5 py-0.2 rounded mr-1">5</strong>Incident Forensics &amp; Preliminary Diagnostics</span>
+        <span><strong class="bg-rose-600 text-white px-1.5 py-0.2 rounded mr-1">6</strong>Escalation Routing &amp; ITIL Validation Engine</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Live KPI Metrics Bar -->
+  <section class="max-w-[1600px] w-full mx-auto px-4 sm:px-6 pt-5 pb-2 relative">
+    <!-- Annotation 2 -->
+    <span data-annotation="2" title="2. Real-Time Operational KPI & SLA Compliance Telemetry" class="annotation-badge hidden absolute top-3 left-6 bg-rose-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-lg border-2 border-white z-20 cursor-help">2</span>
+
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+      <!-- Metric 1: Total Active Tickets -->
+      <div class="bg-white rounded-xl border border-slate-200/90 p-3.5 sm:p-4 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Total Queue Load</p>
+          <div class="flex items-baseline gap-2 mt-1">
+            <span id="kpiTotalTickets" class="text-2xl font-extrabold text-slate-900 font-mono">8</span>
+            <span id="kpiRemainingText" class="text-xs text-slate-500 font-medium">8 open</span>
+          </div>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Metric 2: Critical / High (P1/P2) -->
+      <div class="bg-white rounded-xl border border-slate-200/90 p-3.5 sm:p-4 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Critical / High (P1/P2)</p>
+          <div class="flex items-baseline gap-2 mt-1">
+            <span id="kpiHighPriority" class="text-2xl font-extrabold text-rose-600 font-mono">4</span>
+            <span class="text-xs text-rose-600/80 font-medium">2 P1 &bull; 2 P2</span>
+          </div>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Metric 3: SLA Compliance Rate -->
+      <div class="bg-white rounded-xl border border-slate-200/90 p-3.5 sm:p-4 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">SLA Compliance Rate</p>
+          <div class="flex items-baseline gap-2 mt-1">
+            <span id="kpiSlaCompliance" class="text-2xl font-extrabold text-emerald-600 font-mono">100%</span>
+            <span id="kpiSlaStatus" class="text-xs text-slate-500 font-medium">On Target</span>
+          </div>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Metric 4: Resolved / Escalated Progress -->
+      <div class="bg-white rounded-xl border border-slate-200/90 p-3.5 sm:p-4 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Triaged Progress</p>
+          <div class="flex items-baseline gap-2 mt-1">
+            <span id="kpiProgressCount" class="text-2xl font-extrabold text-sky-600 font-mono">0 / 8</span>
+            <span id="kpiProgressBreakdown" class="text-xs text-slate-500 font-medium">0 FCR &bull; 0 Esc</span>
+          </div>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Metric 5: Triage Accuracy Score -->
+      <div class="col-span-2 lg:col-span-1 bg-white rounded-xl border border-slate-200/90 p-3.5 sm:p-4 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Triage Accuracy Score</p>
+          <div class="flex items-baseline gap-2 mt-1">
+            <span id="kpiAccuracyScore" class="text-2xl font-extrabold text-indigo-600 font-mono">—</span>
+            <span id="kpiAccuracyLabel" class="text-xs text-slate-500 font-medium">Awaiting triage</span>
+          </div>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Two-Column Simulation Workspace -->
+  <main class="max-w-[1600px] w-full mx-auto px-4 sm:px-6 py-4 flex-1 grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
+
+    <!-- LEFT / MAIN QUEUE PANEL (7 cols on xl) -->
+    <section class="xl:col-span-7 bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col">
+      <!-- Queue Filter & Search Controls -->
+      <div class="p-4 border-b border-slate-200 bg-slate-50/70 space-y-3 relative">
+        <!-- Annotation 3 -->
+        <span data-annotation="3" title="3. Multi-Criteria Priority Tabs & Instant Incident Search Bar" class="annotation-badge hidden absolute top-2 right-3 bg-rose-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-lg border-2 border-white z-20 cursor-help">3</span>
+
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Active Incident Triage Queue</h2>
+            <p class="text-xs text-slate-500">Select an incident below to inspect diagnostic evidence and execute routing decisions.</p>
+          </div>
+          <!-- Search Input -->
+          <div class="relative w-full sm:w-64">
+            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input id="searchInput" type="text" placeholder="Search ID, keyword, reporter..." class="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
+          </div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div id="filterTabs" class="flex flex-wrap gap-1.5">
+          <button type="button" data-filter="ALL" class="filter-tab active px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-white transition cursor-pointer">All Tickets (8)</button>
+          <button type="button" data-filter="P1" class="filter-tab px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition cursor-pointer">P1 Critical</button>
+          <button type="button" data-filter="P2" class="filter-tab px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition cursor-pointer">P2 High</button>
+          <button type="button" data-filter="P3" class="filter-tab px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition cursor-pointer">P3 Medium</button>
+          <button type="button" data-filter="P4" class="filter-tab px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition cursor-pointer">P4 Low</button>
+          <button type="button" data-filter="OPEN" class="filter-tab px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition cursor-pointer">Action Required</button>
+          <button type="button" data-filter="DONE" class="filter-tab px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition cursor-pointer">Completed</button>
+        </div>
+      </div>
+
+      <!-- Ticket List Container -->
+      <div class="relative">
+        <!-- Annotation 4 -->
+        <span data-annotation="4" title="4. Prioritized Incident Queue with Live SLA Countdown Timers & Status" class="annotation-badge hidden absolute top-2 right-3 bg-rose-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-lg border-2 border-white z-20 cursor-help">4</span>
+
+        <div id="ticketQueueList" class="divide-y divide-slate-200 max-h-[760px] overflow-y-auto">
+          <!-- Populated dynamically by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT-HAND INSPECTION & DECISION WORKSPACE (5 cols on xl) -->
+    <section class="xl:col-span-5 space-y-4">
+      <!-- Incident Details Card -->
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden relative">
+        <!-- Annotation 5 -->
+        <span data-annotation="5" title="5. Incident Forensics, Impact Matrix & Tier 1 Preliminary Diagnostics" class="annotation-badge hidden absolute top-3 right-3 bg-rose-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-lg border-2 border-white z-20 cursor-help">5</span>
+
+        <div id="ticketDetailContainer" class="p-4 sm:p-5">
+          <!-- Populated dynamically by JS -->
+        </div>
+      </div>
+
+      <!-- Interactive Triage & Escalation Action Card -->
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden relative">
+        <!-- Annotation 6 -->
+        <span data-annotation="6" title="6. Interactive Triage Decision Engine & ITIL Escalation Validator" class="annotation-badge hidden absolute top-3 right-3 bg-rose-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-lg border-2 border-white z-20 cursor-help">6</span>
+
+        <div class="bg-slate-900 text-white px-4 sm:px-5 py-3 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <h3 class="text-sm font-bold tracking-wide">Tier 1 Triage &amp; Escalation Decision Console</h3>
+          </div>
+          <span id="workspaceTicketIdBadge" class="font-mono text-xs bg-slate-800 text-sky-300 px-2 py-0.5 rounded border border-slate-700">INC-1041</span>
+        </div>
+
+        <form id="triageForm" class="p-4 sm:p-5 space-y-4">
+          <!-- Step 1: Priority Verification -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label for="selectPriority" class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                Step 1: Verify / Adjust Priority (Impact &times; Urgency)
+              </label>
+              <span class="text-[11px] text-slate-500">ITIL Severity Matrix</span>
+            </div>
+            <select id="selectPriority" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-xs font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+              <option value="P1">P1 — Critical (Enterprise-wide outage / Active security compromise | SLA: 15m resp / 2h res)</option>
+              <option value="P2">P2 — High (Departmental disruption / Core workflow blocked | SLA: 30m resp / 4h res)</option>
+              <option value="P3">P3 — Medium (Single user or localized fault with workaround | SLA: 2h resp / 24h res)</option>
+              <option value="P4">P4 — Low (Minor defect, standard access request, or routine query | SLA: 8h resp / 72h res)</option>
+            </select>
+          </div>
+
+          <!-- Step 2: Resolution or Escalation Route -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label for="selectRoute" class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                Step 2: Select Resolution or Escalation Path
+              </label>
+              <span class="text-[11px] text-slate-500">Functional / Hierarchical Routing</span>
+            </div>
+            <select id="selectRoute" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-xs font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+              <option value="">-- Choose Triage Disposition / Target Queue --</option>
+              <option value="TIER1_FCR">Resolve at Tier 1 (First-Contact Resolution - FCR)</option>
+              <option value="TIER2_DESKTOP">Escalate to Tier 2 Desktop Engineering</option>
+              <option value="TIER2_FIELD_NET">Escalate to Tier 2 Field &amp; Network Support</option>
+              <option value="TIER2_IAM">Escalate to Tier 2 Identity &amp; Access Management (IAM)</option>
+              <option value="TIER3_NET_INFRA">Escalate to Tier 3 Network &amp; Infrastructure Engineering</option>
+              <option value="TIER3_DBA">Escalate to Tier 3 Database Administration (DBA)</option>
+              <option value="TIER3_SOC">Escalate to Tier 3 Security Operations Center (SOC)</option>
+            </select>
+          </div>
+
+          <!-- Step 3: Handoff Notes -->
+          <div>
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+              <label for="handoffNotes" class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                Step 3: Escalation Handoff / Resolution Notes
+              </label>
+              <button id="btnLoadRunbook" type="button" class="text-[11px] font-semibold text-sky-600 hover:text-sky-700 bg-sky-50 hover:bg-sky-100 px-2.5 py-1 rounded-md border border-sky-200 transition cursor-pointer">
+                + Load Suggested Runbook Notes
+              </button>
+            </div>
+            <textarea id="handoffNotes" rows="3" placeholder="Document diagnostic findings, error codes, containment actions taken, and justification for routing..." class="w-full rounded-xl border border-slate-300 bg-slate-50 p-3 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+          </div>
+
+          <!-- Inline Validation Message Box (Never uses alert()) -->
+          <div id="inlineFormAlert" class="hidden rounded-xl p-3 text-xs font-medium border"></div>
+
+          <!-- Submit Button -->
+          <button type="submit" class="w-full py-3 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white font-bold text-xs sm:text-sm shadow-sm transition flex items-center justify-center gap-2 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>Submit Triage &amp; Routing Decision</span>
+          </button>
+        </form>
+
+        <!-- Real-Time Evaluation & Feedback Panel -->
+        <div id="feedbackContainer" class="hidden border-t border-slate-200 p-4 sm:p-5 bg-slate-50">
+          <!-- Populated dynamically after user submits triage -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Escalation Audit Log Modal -->
+  <div id="auditModal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-4xl w-full max-h-[88vh] flex flex-col overflow-hidden">
+      <div class="px-5 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-bold">Simulation Escalation &amp; Triage Audit Log</h3>
+          <p class="text-xs text-slate-400">Complete ITIL v4 decision record for report documentation &amp; review</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btnCopyAuditReport" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-600 hover:bg-sky-500 text-white transition cursor-pointer">
+            Copy Summary to Clipboard
+          </button>
+          <button id="btnCloseAuditModal" type="button" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer" aria-label="Close modal">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div id="copyToast" class="hidden bg-emerald-600 text-white text-xs font-semibold px-5 py-2 text-center">
+        Audit log summary copied to clipboard!
+      </div>
+      <div id="auditModalBody" class="p-5 overflow-y-auto space-y-3 text-xs">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * ServiceDesk Pro - Tier 1 Operations & Escalation Simulation Engine
+     * Models 8 enterprise IT incidents aligned with ITIL v4 & NIST SP 800-61 practices.
+     */
+
+    const ROUTE_LABELS = {
+      TIER1_FCR: 'Resolve at Tier 1 (First-Contact Resolution)',
+      TIER2_DESKTOP: 'Tier 2 Desktop Engineering',
+      TIER2_FIELD_NET: 'Tier 2 Field & Network Support',
+      TIER2_IAM: 'Tier 2 Identity & Access Management (IAM)',
+      TIER3_NET_INFRA: 'Tier 3 Network & Infrastructure Engineering',
+      TIER3_DBA: 'Tier 3 Database Administration (DBA)',
+      TIER3_SOC: 'Tier 3 Security Operations Center (SOC)',
+    };
+
+    const PRIORITY_META = {
+      P1: {
+        label: 'P1 Critical',
+        badgeClass: 'bg-rose-100 text-rose-800 border-rose-300',
+        dotClass: 'bg-rose-600',
+        matrix: 'High Impact × High Urgency',
+      },
+      P2: {
+        label: 'P2 High',
+        badgeClass: 'bg-amber-100 text-amber-800 border-amber-300',
+        dotClass: 'bg-amber-500',
+        matrix: 'High/Medium Impact × High Urgency',
+      },
+      P3: {
+        label: 'P3 Medium',
+        badgeClass: 'bg-sky-100 text-sky-800 border-sky-300',
+        dotClass: 'bg-sky-600',
+        matrix: 'Medium/Low Impact × Medium Urgency',
+      },
+      P4: {
+        label: 'P4 Low',
+        badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+        dotClass: 'bg-emerald-600',
+        matrix: 'Low Impact × Low Urgency',
+      },
+    };
+
+    // Initial dataset of 8 realistic IT support incidents matching the report
+    const INITIAL_TICKETS = [
+      {
+        id: 'INC-1041',
+        title: 'Enterprise VPN Gateway Authentication Outage (RADIUS/LDAP sync failure blocking 450+ remote staff)',
+        category: 'Network / IAM Infrastructure',
+        reportedPriority: 'P1',
+        optimalPriority: 'P1',
+        optimalRoute: 'TIER3_NET_INFRA',
+        slaSecondsRemaining: 14 * 60, // 14m remaining
+        reporter: 'Marcus Vance (VP Remote Operations)',
+        department: 'Enterprise-Wide / Remote Workforce',
+        affectedAssets: 'VPN-GW-01, RADIUS-AUTH-02, Core Firewall Cluster',
+        timestamp: '08:46 AM (14 mins ago)',
+        description:
+          'Remote employees across North America and EMEA attempting to connect via the corporate SSL/TLS VPN client receive "Authentication Failed: RADIUS Server Timeout (Error 412)" immediately after approving their MFA push prompt.',
+        businessImpact:
+          'Critical Enterprise Outage: Over 450 remote personnel are completely locked out of internal ERP systems, file shares, and private cloud repositories during peak morning business hours.',
+        preliminarySteps: [
+          'Verified external ISP routing and public DNS resolution from two remote diagnostic endpoints.',
+          'Confirmed cloud MFA identity provider status page reports 100% operational push delivery.',
+          'Reproduced Error 412 using a Tier 1 test service account; observed 100% packet loss between DMZ VPN concentrator and internal RADIUS/LDAP sync bridge.',
+        ],
+        suggestedNotes:
+          'VERIFIED P1 OUTAGE: Reproduced RADIUS Error 412 across multiple remote endpoints. MFA cloud push succeeds, but DMZ-to-LAN RADIUS/LDAP sync times out. 450+ remote users impacted. Escalating immediately to Tier 3 Network & Infrastructure Engineering with hierarchical Incident Manager alert.',
+        rationale:
+          'VPN gateway firewall rules, DMZ routing tables, and core RADIUS/LDAP synchronization infrastructure are strictly restricted to Tier 3 Network & Infrastructure Engineering. Because 450+ staff are blocked, P1 priority and immediate functional + hierarchical escalation are mandatory.',
+      },
+      {
+        id: 'INC-1042',
+        title: 'Suspected Spear-Phishing & OAuth Token Compromise on Finance Exec Account',
+        category: 'Information Security (InfoSec)',
+        reportedPriority: 'P1',
+        optimalPriority: 'P1',
+        optimalRoute: 'TIER3_SOC',
+        slaSecondsRemaining: 11 * 60, // 11m remaining
+        reporter: 'Automated SIEM Alert + Elena Rostova (Finance)',
+        department: 'Executive Finance & Treasury',
+        affectedAssets: 'M365 Tenant, Exec-Laptop-FIN04, Azure AD / Entra ID',
+        timestamp: '08:49 AM (11 mins ago)',
+        description:
+          'A Finance Executive clicked a spoofed DocuSign wire-authorization link, entered SSO credentials, and granted OAuth consent to an unverified cloud app requesting Mail.ReadWrite and Files.Read.All. SIEM triggered an impossible-travel login from an overseas ASN alongside a hidden inbox forwarding rule.',
+        businessImpact:
+          'Critical Security & Financial Exposure: Compromised executive mailbox exposes wire transfer approvals, M&A documents, and creates imminent risk of Business Email Compromise (BEC) lateral phishing.',
+        preliminarySteps: [
+          'Instructed user to disconnect laptop from Wi-Fi/Ethernet immediately without powering down to preserve volatile RAM artifacts.',
+          'Executed Tier 1 Containment SOP: revoked active refresh tokens and enforced an emergency credential reset in the identity console.',
+          'Captured suspicious OAuth Application ID (app_992f-malicious) and malicious mail-flow rule headers for forensic handoff.',
+        ],
+        suggestedNotes:
+          'CONTAINED & ESCALATING P1 SECURITY INCIDENT: Executive account compromised via spear-phishing + rogue OAuth consent (Mail.ReadWrite). Active sessions revoked and endpoint isolated offline. Escalating immediately to Tier 3 SOC for tenant-wide OAuth app banishment, mail audit forensics, and BEC sweep.',
+        rationale:
+          'Active credential compromise and malicious OAuth app grants require tenant-wide audit log forensics, enterprise app revocation, and threat hunting by the Tier 3 Security Operations Center (SOC) per NIST SP 800-61 incident response standards.',
+      },
+      {
+        id: 'INC-1043',
+        title: 'Production ERP Database Deadlock & Order Processing Timeout',
+        category: 'Enterprise Applications / DB',
+        reportedPriority: 'P2',
+        optimalPriority: 'P2',
+        optimalRoute: 'TIER3_DBA',
+        slaSecondsRemaining: 42 * 60, // 42m remaining
+        reporter: 'Devon Brooks (Warehouse Logistics Lead)',
+        department: 'Supply Chain & Order Fulfillment',
+        affectedAssets: 'ERP-PROD-APP03, SQL-CLUSTER-ERP01',
+        timestamp: '08:18 AM (42 mins ago)',
+        description:
+          'Warehouse dispatchers and billing coordinators experience 60-second application freezes followed by "HTTP 504 Gateway Timeout / SQL Transaction Deadlock (ORA-00060)" whenever committing batch shipping manifests.',
+        businessImpact:
+          'High Departmental Blocker: 32 warehouse and billing staff cannot generate shipping labels or finalize customer invoices ahead of the 10:30 AM carrier pickup cutoff. Read-only inventory lookups remain responsive.',
+        preliminarySteps: [
+          'Confirmed error reproduces across multiple client browsers and Citrix VDI sessions, ruling out local workstation cache issues.',
+          'Verified ERP web front-end nodes pass HTTP health checks with normal CPU/memory utilization.',
+          'Captured exact database lock error code (ORA-00060) and blocked session PID from application diagnostic logs; Tier 1 lacks production DB kill/profiling rights.',
+        ],
+        suggestedNotes:
+          'P2 DEPARTMENTAL BLOCKER: Warehouse order commit failing with SQL deadlock ORA-00060 across all client sessions. Web tier healthy. 32 dispatch staff blocked prior to carrier cutoff. Escalating to Tier 3 DBA to inspect blocking SQL transaction PIDs and clear lock contention.',
+        rationale:
+          'Tier 1 has isolated the fault from the client and web tier down to a production database transaction deadlock (ORA-00060). Inspecting active SQL lock trees and terminating/tuning blocking database sessions requires Tier 3 Database Administration (DBA) privileges.',
+      },
+      {
+        id: 'INC-1044',
+        title: '3rd Floor East Wing PoE Switch Failure (28 IP Phones & VoIP/Wi-Fi APs Offline)',
+        category: 'Network Infrastructure / Hardware',
+        reportedPriority: 'P2',
+        optimalPriority: 'P2',
+        optimalRoute: 'TIER2_FIELD_NET',
+        slaSecondsRemaining: 55 * 60, // 55m remaining
+        reporter: 'Priya Nair (Customer Support Floor Supervisor)',
+        department: 'Customer Operations (3rd Floor East)',
+        affectedAssets: 'IDF-SW-3E-02 (Cisco Catalyst PoE+), 24 VoIP Phones, 4 Wi-Fi APs',
+        timestamp: '08:05 AM (55 mins ago)',
+        description:
+          'All 24 desk VoIP phones and 4 ceiling-mounted wireless access points in the 3rd Floor East Wing simultaneously lost power and went offline, while non-PoE wired desktop PCs connected to the same closet retained network link.',
+        businessImpact:
+          'High Departmental Disruption: 45 customer operations agents lost desk telephony and wireless connectivity, forcing temporary call rerouting and mobile hotspot tethering.',
+        preliminarySteps: [
+          'Traced affected wall-jack patch panels to access switch IDF-SW-3E-02 in the 3rd Floor East telecom closet.',
+          'Verified non-PoE wired workstations on adjacent ports still pass data traffic, confirming switch uplink is active while the PoE power rail faulted.',
+          'Checked environmental sensors in IDF-3E (ambient temp 69°F, normal) and documented affected port range (Gi1/0/1–Gi1/0/32).',
+        ],
+        suggestedNotes:
+          'P2 INFRASTRUCTURE FAULT: Switch IDF-SW-3E-02 suffered a PoE power rail failure, dropping 24 VoIP phones and 4 APs on 3rd Floor East. Non-PoE data ports remain up. Escalating to Tier 2 Field & Network Support for on-site switch PSU inspection / hardware swap.',
+        rationale:
+          'Physical telecom closet inspection, PoE controller diagnostics, and switch PSU/chassis replacement require on-site hands-on access and switch configuration rights owned by Tier 2 Field & Network Support.',
+      },
+      {
+        id: 'INC-1045',
+        title: 'Recurring BSOD (DRIVER_POWER_STATE_FAILURE) on Engineering Workstation',
+        category: 'Endpoint Hardware & OS',
+        reportedPriority: 'P3',
+        optimalPriority: 'P3',
+        optimalRoute: 'TIER2_DESKTOP',
+        slaSecondsRemaining: 3 * 3600 + 20 * 60, // 3h 20m remaining
+        reporter: 'Liam O’Connor (Senior CAD Engineer)',
+        department: 'Product Engineering',
+        affectedAssets: 'ENG-WS-772 (Dell Precision Mobile Workstation + TB4 Dock)',
+        timestamp: '07:40 AM (1 hr 20 mins ago)',
+        description:
+          'Following last night’s automated BIOS and discrete GPU driver update, the engineer’s workstation crashes with a Blue Screen of Death (0x0000009F: DRIVER_POWER_STATE_FAILURE) whenever waking from sleep while connected to a Thunderbolt 4 dock.',
+        businessImpact:
+          'Medium Single-User Impact: Risk of losing unsaved CAD assemblies if sleep triggers while docked; however, the workstation runs stably when undocked or with sleep disabled (viable workaround in place).',
+        preliminarySteps: [
+          'Analyzed Windows Event Viewer System logs and confirmed BugCheck 0x9F minidumps tied to PCIe/Thunderbolt power transition.',
+          'Attempted standard Tier 1 rollback of GPU driver and reinstalled certified Thunderbolt controller package via Software Center.',
+          'BSOD persisted on sleep/wake test; BIOS rollback and hardware dock/motherboard diagnostics require local admin / bench tools.',
+        ],
+        suggestedNotes:
+          'P3 ENDPOINT HARDWARE/DRIVER ESCALATION: BugCheck 0x9F (DRIVER_POWER_STATE_FAILURE) persists on ENG-WS-772 after standard driver reinstall. User has temporary workaround (sleep disabled / undocked). Escalating to Tier 2 Desktop Engineering for BIOS rollback, minidump debugging, or dock/board RMA.',
+        rationale:
+          'A single-user workstation issue with an active workaround is properly classified as P3 Medium. Because standard Tier 1 driver remediation failed and BIOS/hardware bench diagnostics are needed, Tier 2 Desktop Engineering is the correct escalation target.',
+      },
+      {
+        id: 'INC-1046',
+        title: 'Shared Marketing Color LaserJet Print Spooler Crash & Stuck Queue',
+        category: 'Print & Peripheral Services',
+        reportedPriority: 'P3',
+        optimalPriority: 'P3',
+        optimalRoute: 'TIER1_FCR',
+        slaSecondsRemaining: 3 * 3600 + 45 * 60, // 3h 45m remaining
+        reporter: 'Chloe Bennett (Brand Marketing Coordinator)',
+        department: 'Corporate Marketing',
+        affectedAssets: 'PRN-MKT-COLOR02, PRINT-SRV-01',
+        timestamp: '08:15 AM (45 mins ago)',
+        description:
+          'Print jobs larger than 18 MB sent to shared color printer PRN-MKT-COLOR02 hang indefinitely in "Spooling" status, crashing the local print queue and blocking subsequent jobs for the Marketing team.',
+        businessImpact:
+          'Medium Team Impact: 9 Marketing coordinators cannot print campaign proofs on their local floor printer, though an alternative monochrome/color multifunction printer is available 40 feet away.',
+        preliminarySteps: [
+          'Connected remotely to PRINT-SRV-01 Print Management console (Tier 1 holds full print-queue admin rights).',
+          'Stopped the Windows Print Spooler service, purged corrupted .SPL and .SHD spool files from C:\\Windows\\System32\\spool\\PRINTERS, and restarted the service.',
+          'Switched port driver rendering from raw PCL6 to PostScript (PS) pass-through and verified a 30 MB test PDF printed cleanly.',
+        ],
+        suggestedNotes:
+          'RESOLVED AT TIER 1 (FCR): Stopped Print Spooler on PRINT-SRV-01, cleared stalled .SPL/.SHD spooler files, and switched PRN-MKT-COLOR02 driver to PostScript pass-through to handle large PDFs. Confirmed 30 MB test proof printed successfully with user.',
+        rationale:
+          'Tier 1 analysts possess full administrative permissions to manage print queues, purge stuck spooler files, and adjust standard print drivers. Resolving this at Tier 1 achieves First-Contact Resolution (FCR) and protects Tier 2 engineering capacity.',
+      },
+      {
+        id: 'INC-1047',
+        title: 'Outlook Desktop Search Index Corruption & Missing Recent Emails',
+        category: 'Productivity & Collaboration Apps',
+        reportedPriority: 'P4',
+        optimalPriority: 'P4',
+        optimalRoute: 'TIER1_FCR',
+        slaSecondsRemaining: 22 * 3600 + 10 * 60, // 22h 10m remaining
+        reporter: 'Jordan Taylor (Account Executive)',
+        department: 'Enterprise Sales',
+        affectedAssets: 'SALES-LT-309 (Windows 11 / Microsoft 365 Outlook)',
+        timestamp: '07:10 AM (1 hr 50 mins ago)',
+        description:
+          'After a routine Windows cumulative patch, Outlook desktop search returns "Something went wrong and your search couldn’t be completed" and fails to index emails received in the past 48 hours.',
+        businessImpact:
+          'Low Single-User Impact: Minor inconvenience locating older client threads in the desktop app; Outlook on the Web (OWA) search works normally as an immediate zero-downtime workaround.',
+        preliminarySteps: [
+          'Confirmed OWA search returns all recent messages, proving Exchange Online mailbox health is intact.',
+          'Checked Windows Search service on SALES-LT-309 and found local .edb search catalog marked corrupted.',
+          'Ran Tier 1 Outlook Indexing Repair SOP (Control Panel → Indexing Options → Advanced → Rebuild) and verified index counter increments normally.',
+        ],
+        suggestedNotes:
+          'RESOLVED AT TIER 1 (FCR): Verified Exchange Online mailbox health via OWA. Rebuilt corrupted local Windows Search / Outlook .edb index on SALES-LT-309 per Tier 1 SOP. Confirmed instant search results now return recent emails accurately.',
+        rationale:
+          'Local Outlook search index corruption with a full OWA workaround is a low-severity P4 issue that falls squarely within standard Tier 1 workstation SOPs. No specialist escalation is warranted.',
+      },
+      {
+        id: 'INC-1048',
+        title: 'New Hire RBAC Access Provisioning & Restricted SharePoint Drive Permissions',
+        category: 'Identity & Access Management (RBAC)',
+        reportedPriority: 'P4',
+        optimalPriority: 'P4',
+        optimalRoute: 'TIER2_IAM',
+        slaSecondsRemaining: 23 * 3600 + 30 * 60, // 23h 30m remaining
+        reporter: 'Hannah Sterling (HR Onboarding Partner)',
+        department: 'Internal Audit & Compliance',
+        affectedAssets: 'Active Directory RBAC, SharePoint SOX-Audit-Vault',
+        timestamp: '08:30 AM (30 mins ago)',
+        description:
+          'HR submitted an onboarding access ticket requesting read/write permissions to the SOX-regulated "FY2025-2026 Internal Audit Vault" SharePoint site and privileged security group SG-AUDIT-PRIV for a new Senior Auditor starting next Monday.',
+        businessImpact:
+          'Low Routine Request: Scheduled onboarding provisioning with a 4-day lead time; no operational outage or active user blockage exists.',
+        preliminarySteps: [
+          'Verified new hire employee ID and start date in HRIS directory.',
+          'Confirmed security group SG-AUDIT-PRIV is a SOX-controlled privileged role outside Tier 1 self-service delegation.',
+          'Requested and attached written approval from the VP of Internal Audit (Data Owner) to satisfy compliance audit controls.',
+        ],
+        suggestedNotes:
+          'P4 CONTROLLED ACCESS ROUTING: Verified new hire identity and attached mandatory Data Owner (VP Internal Audit) approval for SOX-controlled group SG-AUDIT-PRIV. Routing to Tier 2 Identity & Access Management (IAM) for auditable RBAC provisioning.',
+        rationale:
+          'Privileged SOX-regulated security groups require auditable Role-Based Access Control (RBAC) provisioning and segregation-of-duties verification performed by Tier 2 Identity & Access Management (IAM) after Data Owner approval is attached.',
+      },
+    ];
+
+    // Application State
+    let tickets = [];
+    let selectedTicketId = 'INC-1041';
+    let currentFilter = 'ALL';
+    let searchQuery = '';
+    let annotationsVisible = false;
+    let slaInterval = null;
+
+    // DOM Elements
+    const ticketQueueList = document.getElementById('ticketQueueList');
+    const ticketDetailContainer = document.getElementById('ticketDetailContainer');
+    const workspaceTicketIdBadge = document.getElementById('workspaceTicketIdBadge');
+    const selectPriority = document.getElementById('selectPriority');
+    const selectRoute = document.getElementById('selectRoute');
+    const handoffNotes = document.getElementById('handoffNotes');
+    const inlineFormAlert = document.getElementById('inlineFormAlert');
+    const feedbackContainer = document.getElementById('feedbackContainer');
+    const triageForm = document.getElementById('triageForm');
+
+    // Initialize or Reset Simulation
+    function initSimulation() {
+      tickets = INITIAL_TICKETS.map((t) => ({
+        ...t,
+        status: 'OPEN', // 'OPEN' | 'RESOLVED' | 'ESCALATED'
+        userSubmission: null,
+      }));
+      selectedTicketId = 'INC-1041';
+      currentFilter = 'ALL';
+      searchQuery = '';
+      document.getElementById('searchInput').value = '';
+      updateFilterTabUI();
+      renderAll();
+    }
+
+    // Format seconds into readable SLA countdown
+    function formatSlaTime(totalSeconds) {
+      if (totalSeconds <= 0) return 'BREACHED';
+      const hrs = Math.floor(totalSeconds / 3600);
+      const mins = Math.floor((totalSeconds % 3600) / 60);
+      const secs = totalSeconds % 60;
+      if (hrs > 0) {
+        return `${hrs}h ${String(mins).padStart(2, '0')}m`;
+      }
+      return `${String(mins).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s`;
+    }
+
+    // Start live 1-second SLA ticker for open tickets
+    function startSlaTicker() {
+      if (slaInterval) clearInterval(slaInterval);
+      slaInterval = setInterval(() => {
+        let changed = false;
+        tickets.forEach((t) => {
+          if (t.status === 'OPEN' && t.slaSecondsRemaining > 0) {
+            t.slaSecondsRemaining -= 1;
+            changed = true;
+          }
+        });
+        if (changed) {
+          updateQueueTimersOnly();
+          updateKpiMetrics();
+        }
+      }, 1000);
+    }
+
+    // Lightweight DOM update for timers so user typing/selection isn't disrupted
+    function updateQueueTimersOnly() {
+      tickets.forEach((t) => {
+        const timerEl = document.getElementById(`timer-${t.id}`);
+        if (timerEl && t.status === 'OPEN') {
+          timerEl.textContent = formatSlaTime(t.slaSecondsRemaining);
+          if (t.slaSecondsRemaining < 900) {
+            timerEl.className = 'font-mono text-xs font-bold text-rose-600';
+          }
+        }
+      });
+    }
+
+    // Update top KPI bar
+    function updateKpiMetrics() {
+      const total = tickets.length;
+      const openTickets = tickets.filter((t) => t.status === 'OPEN');
+      const completedTickets = tickets.filter((t) => t.status !== 'OPEN');
+      const fcrCount = tickets.filter((t) => t.status === 'RESOLVED').length;
+      const escCount = tickets.filter((t) => t.status === 'ESCALATED').length;
+
+      // Active P1/P2 count (reflecting user's adjusted priority if submitted)
+      const p1Count = tickets.filter((t) => (t.userSubmission?.priority || t.reportedPriority) === 'P1').length;
+      const p2Count = tickets.filter((t) => (t.userSubmission?.priority || t.reportedPriority) === 'P2').length;
+
+      // SLA compliance calculation
+      const breachedCount = tickets.filter((t) => t.status === 'OPEN' && t.slaSecondsRemaining <= 0).length;
+      const compliancePct = Math.round(((total - breachedCount) / total) * 100);
+
+      document.getElementById('kpiTotalTickets').textContent = total;
+      document.getElementById('kpiRemainingText').textContent = `${openTickets.length} open`;
+      document.getElementById('kpiHighPriority').textContent = p1Count + p2Count;
+      document.getElementById('kpiHighPriority').nextElementSibling.textContent = `${p1Count} P1 • ${p2Count} P2`;
+
+      const slaEl = document.getElementById('kpiSlaCompliance');
+      slaEl.textContent = `${compliancePct}%`;
+      slaEl.className = `text-2xl font-extrabold font-mono ${compliancePct === 100 ? 'text-emerald-600' : 'text-amber-600'}`;
+      document.getElementById('kpiSlaStatus').textContent = breachedCount === 0 ? 'Within SLA' : `${breachedCount} Breached`;
+
+      document.getElementById('kpiProgressCount').textContent = `${completedTickets.length} / ${total}`;
+      document.getElementById('kpiProgressBreakdown').textContent = `${fcrCount} FCR • ${escCount} Esc`;
+      document.getElementById('auditCountBadge').textContent = completedTickets.length;
+
+      // Triage Accuracy Score
+      const accuracyEl = document.getElementById('kpiAccuracyScore');
+      const accuracyLabelEl = document.getElementById('kpiAccuracyLabel');
+      if (completedTickets.length === 0) {
+        accuracyEl.textContent = '—';
+        accuracyLabelEl.textContent = 'Awaiting triage';
+      } else {
+        const totalScore = completedTickets.reduce((acc, t) => acc + t.userSubmission.score, 0);
+        const avgScore = Math.round(totalScore / completedTickets.length);
+        accuracyEl.textContent = `${avgScore}%`;
+        accuracyLabelEl.textContent =
+          avgScore >= 90 ? 'ITIL Gold Standard' : avgScore >= 70 ? 'Solid Triage' : 'Needs Review';
+      }
+    }
+
+    // Filter tickets based on active tab & search input
+    function getFilteredTickets() {
+      return tickets.filter((t) => {
+        const effectivePriority = t.userSubmission?.priority || t.reportedPriority;
+        if (currentFilter === 'P1' && effectivePriority !== 'P1') return false;
+        if (currentFilter === 'P2' && effectivePriority !== 'P2') return false;
+        if (currentFilter === 'P3' && effectivePriority !== 'P3') return false;
+        if (currentFilter === 'P4' && effectivePriority !== 'P4') return false;
+        if (currentFilter === 'OPEN' && t.status !== 'OPEN') return false;
+        if (currentFilter === 'DONE' && t.status === 'OPEN') return false;
+
+        if (searchQuery.trim() !== '') {
+          const q = searchQuery.toLowerCase();
+          const haystack = `${t.id} ${t.title} ${t.category} ${t.reporter} ${t.department}`.toLowerCase();
+          if (!haystack.includes(q)) return false;
+        }
+        return true;
+      });
+    }
+
+    // Render left queue list
+    function renderQueueList() {
+      const filtered = getFilteredTickets();
+
+      if (filtered.length === 0) {
+        ticketQueueList.innerHTML = `
+          <div class="p-10 text-center">
+            <p class="text-sm font-semibold text-slate-700">No tickets match the current filter criteria.</p>
+            <p class="text-xs text-slate-500 mt-1">Try switching filter tabs or clearing your search query.</p>
+          </div>
+        `;
+        return;
+      }
+
+      ticketQueueList.innerHTML = filtered
+        .map((t) => {
+          const isSelected = t.id === selectedTicketId;
+          const activePriority = t.userSubmission?.priority || t.reportedPriority;
+          const pMeta = PRIORITY_META[activePriority];
+          const isUrgentSla = t.status === 'OPEN' && t.slaSecondsRemaining < 900;
+
+          let statusPill = '';
+          if (t.status === 'OPEN') {
+            statusPill = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Action Required
+            </span>`;
+          } else if (t.status === 'RESOLVED') {
+            statusPill = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              ✓ Resolved (Tier 1 FCR)
+            </span>`;
+          } else {
+            statusPill = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+              ↗ ${ROUTE_LABELS[t.userSubmission.route].replace('Escalate to ', '')}
+            </span>`;
+          }
+
+          return `
+            <div onclick="selectTicket('${t.id}')" class="p-3.5 sm:p-4 cursor-pointer transition relative ${
+              isSelected
+                ? 'bg-sky-50/80 border-l-4 border-l-sky-600'
+                : 'hover:bg-slate-50 border-l-4 border-l-transparent'
+            }">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                <div class="flex items-center gap-2">
+                  <span class="font-mono text-xs font-bold text-slate-900 bg-slate-200/70 px-2 py-0.5 rounded">${t.id}</span>
+                  <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold border ${pMeta.badgeClass}">
+                    <span class="w-1.5 h-1.5 rounded-full ${pMeta.dotClass}"></span>
+                    ${pMeta.label}
+                  </span>
+                  <span class="text-[11px] font-medium text-slate-500 hidden sm:inline">${t.category}</span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  ${
+                    t.status === 'OPEN'
+                      ? `<span class="text-[11px] text-slate-500">SLA: <strong id="timer-${t.id}" class="font-mono text-xs ${
+                          isUrgentSla ? 'text-rose-600' : 'text-slate-800'
+                        }">${formatSlaTime(t.slaSecondsRemaining)}</strong></span>`
+                      : `<span class="text-[11px] font-mono font-semibold text-slate-500">Score: ${t.userSubmission.score}%</span>`
+                  }
+                </div>
+              </div>
+
+              <h3 class="text-xs sm:text-sm font-bold text-slate-900 leading-snug mb-2">${t.title}</h3>
+
+              <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
+                <span>Reporter: <strong class="font-medium text-slate-700">${t.reporter}</strong></span>
+                <div>${statusPill}</div>
+              </div>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    // Render right-hand inspection panel & sync form state
+    function renderSelectedTicketWorkspace() {
+      const t = tickets.find((item) => item.id === selectedTicketId) || tickets[0];
+      if (!t) return;
+
+      const activePriority = t.userSubmission?.priority || t.reportedPriority;
+      const pMeta = PRIORITY_META[activePriority];
+
+      ticketDetailContainer.innerHTML = `
+        <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200">
+          <div class="flex items-center gap-2">
+            <span class="font-mono text-sm font-extrabold text-slate-900 bg-slate-100 border border-slate-300 px-2.5 py-0.5 rounded-lg">${t.id}</span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border ${pMeta.badgeClass}">
+              <span class="w-2 h-2 rounded-full ${pMeta.dotClass}"></span>
+              ${pMeta.label}
+            </span>
+          </div>
+          <span class="text-[11px] font-mono text-slate-500">Logged: ${t.timestamp}</span>
+        </div>
+
+        <h2 class="text-base font-extrabold text-slate-900 mt-3 leading-snug">${t.title}</h2>
+
+        <!-- Metadata Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-xs">
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Reporter &amp; Role</span>
+            <span class="font-semibold text-slate-800">${t.reporter}</span>
+          </div>
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Department / Scope</span>
+            <span class="font-semibold text-slate-800">${t.department}</span>
+          </div>
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Affected Configuration Items</span>
+            <span class="font-mono text-[11px] font-semibold text-slate-800">${t.affectedAssets}</span>
+          </div>
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Impact &times; Urgency Matrix</span>
+            <span class="font-semibold text-slate-800">${pMeta.matrix}</span>
+          </div>
+        </div>
+
+        <!-- Detailed Description -->
+        <div class="mt-3.5">
+          <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Incident Symptom Description</h4>
+          <p class="text-xs text-slate-700 leading-relaxed">${t.description}</p>
+        </div>
+
+        <!-- Business Impact -->
+        <div class="mt-3 p-3 rounded-xl bg-amber-50/70 border border-amber-200/80">
+          <h4 class="text-[11px] font-bold uppercase tracking-wider text-amber-800 mb-0.5">Verified Business &amp; User Impact</h4>
+          <p class="text-xs text-amber-950 leading-relaxed">${t.businessImpact}</p>
+        </div>
+
+        <!-- Preliminary Tier 1 Troubleshooting Steps -->
+        <div class="mt-3.5">
+          <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Preliminary Tier 1 Troubleshooting Completed</h4>
+          <ul class="space-y-1.5">
+            ${t.preliminarySteps
+              .map(
+                (step, idx) => `
+              <li class="flex items-start gap-2 text-xs text-slate-700">
+                <span class="font-mono text-[10px] font-bold bg-sky-100 text-sky-800 px-1.5 py-0.5 rounded mt-0.5">${idx + 1}</span>
+                <span>${step}</span>
+              </li>
+            `
+              )
+              .join('')}
+          </ul>
+        </div>
+      `;
+
+      // Sync interactive form fields
+      workspaceTicketIdBadge.textContent = t.id;
+      inlineFormAlert.classList.add('hidden');
+
+      if (t.userSubmission) {
+        selectPriority.value = t.userSubmission.priority;
+        selectRoute.value = t.userSubmission.route;
+        handoffNotes.value = t.userSubmission.notes;
+        renderEvaluationFeedback(t);
+      } else {
+        selectPriority.value = t.reportedPriority;
+        selectRoute.value = '';
+        handoffNotes.value = '';
+        feedbackContainer.classList.add('hidden');
+      }
+    }
+
+    // Evaluate user triage submission against ITIL best practices
+    function evaluateSubmission(ticket, chosenPriority, chosenRoute, notes) {
+      const priorityCorrect = chosenPriority === ticket.optimalPriority;
+      const routeCorrect = chosenRoute === ticket.optimalRoute;
+      const notesAdequate = notes.trim().length >= 25;
+
+      let score = 0;
+      if (routeCorrect) score += 60;
+      else if (
+        // Partial credit if escalated to right tier level (e.g. Tier 3 vs Tier 3)
+        (chosenRoute.startsWith('TIER3') && ticket.optimalRoute.startsWith('TIER3')) ||
+        (chosenRoute.startsWith('TIER2') && ticket.optimalRoute.startsWith('TIER2'))
+      ) {
+        score += 25;
+      }
+
+      if (priorityCorrect) score += 25;
+      else if (
+        Math.abs(parseInt(chosenPriority[1], 10) - parseInt(ticket.optimalPriority[1], 10)) === 1
+      ) {
+        score += 10;
+      }
+
+      if (notesAdequate) score += 15;
+      else if (notes.trim().length > 0) score += 5;
+
+      // Determine diagnostic diagnosis of mistake if any
+      let diagnosisTitle = 'Optimal ITIL Triage & Escalation Decision';
+      let diagnosisTone = 'emerald';
+      let diagnosisDetail = ticket.rationale;
+
+      if (!routeCorrect) {
+        diagnosisTone = 'amber';
+        if (chosenRoute === 'TIER1_FCR' && ticket.optimalRoute !== 'TIER1_FCR') {
+          diagnosisTitle = 'Under-Escalation Risk: Beyond Tier 1 Permissions';
+          diagnosisDetail = `Attempting to close ${ticket.id} at Tier 1 leaves the root cause unresolved because Tier 1 lacks specialist infrastructure/security privileges. Optimal route: ${ROUTE_LABELS[ticket.optimalRoute]}. ${ticket.rationale}`;
+        } else if (chosenRoute !== 'TIER1_FCR' && ticket.optimalRoute === 'TIER1_FCR') {
+          diagnosisTitle = 'Over-Escalation Warning: Unnecessary Specialist Handoff';
+          diagnosisDetail = `Escalating ${ticket.id} consumes Tier 2/3 engineering bandwidth on an issue covered by standard Tier 1 SOPs. Optimal route: ${ROUTE_LABELS[ticket.optimalRoute]}. ${ticket.rationale}`;
+        } else {
+          diagnosisTitle = 'Misrouted Escalation Queue ("Ticket Ping-Pong" Risk)';
+          diagnosisDetail = `Routing to ${ROUTE_LABELS[chosenRoute]} delays resolution because domain ownership belongs to ${ROUTE_LABELS[ticket.optimalRoute]}. ${ticket.rationale}`;
+        }
+      } else if (!priorityCorrect) {
+        diagnosisTone = 'sky';
+        diagnosisTitle = `Correct Queue, Priority Mismatch (Optimal: ${ticket.optimalPriority})`;
+        diagnosisDetail = `You selected the optimal team (${ROUTE_LABELS[ticket.optimalRoute]}), but the Impact × Urgency matrix classifies this incident as ${ticket.optimalPriority}. ${ticket.rationale}`;
+      }
+
+      return {
+        priority: chosenPriority,
+        route: chosenRoute,
+        notes: notes.trim(),
+        priorityCorrect,
+        routeCorrect,
+        notesAdequate,
+        score,
+        diagnosisTitle,
+        diagnosisTone,
+        diagnosisDetail,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      };
+    }
+
+    // Render Evaluation Feedback box below form
+    function renderEvaluationFeedback(ticket) {
+      const sub = ticket.userSubmission;
+      if (!sub) return;
+
+      const toneClasses = {
+        emerald: 'bg-emerald-50 border-emerald-300 text-emerald-950',
+        amber: 'bg-amber-50 border-amber-300 text-amber-950',
+        sky: 'bg-sky-50 border-sky-300 text-sky-950',
+      };
+      const badgeClasses = {
+        emerald: 'bg-emerald-600 text-white',
+        amber: 'bg-amber-600 text-white',
+        sky: 'bg-sky-600 text-white',
+      };
+
+      feedbackContainer.classList.remove('hidden');
+      feedbackContainer.innerHTML = `
+        <div class="rounded-xl border p-3.5 ${toneClasses[sub.diagnosisTone]}">
+          <div class="flex items-center justify-between gap-2 mb-1.5">
+            <span class="text-xs font-extrabold">${sub.diagnosisTitle}</span>
+            <span class="font-mono text-xs font-bold px-2 py-0.5 rounded-md ${badgeClasses[sub.diagnosisTone]}">
+              Score: ${sub.score}/100
+            </span>
+          </div>
+
+          <div class="flex flex-wrap gap-2 my-2 text-[11px] font-semibold">
+            <span class="px-2 py-0.5 rounded bg-white/80 border border-black/10">
+              Priority: ${sub.priorityCorrect ? '✓ Accurate (' + sub.priority + ')' : '✗ Expected ' + ticket.optimalPriority}
+            </span>
+            <span class="px-2 py-0.5 rounded bg-white/80 border border-black/10">
+              Routing: ${sub.routeCorrect ? '✓ Optimal Team' : '✗ Expected ' + ROUTE_LABELS[ticket.optimalRoute]}
+            </span>
+            <span class="px-2 py-0.5 rounded bg-white/80 border border-black/10">
+              Handoff Notes: ${sub.notesAdequate ? '✓ Detailed' : '⚠ Brief'}
+            </span>
+          </div>
+
+          <p class="text-xs leading-relaxed opacity-95 mt-1.5">${sub.diagnosisDetail}</p>
+        </div>
+      `;
+    }
+
+    // Handle Triage Form Submission
+    triageForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const ticket = tickets.find((t) => t.id === selectedTicketId);
+      if (!ticket) return;
+
+      const chosenPriority = selectPriority.value;
+      const chosenRoute = selectRoute.value;
+      const notes = handoffNotes.value;
+
+      if (!chosenRoute) {
+        inlineFormAlert.textContent = 'Please select a Resolution or Escalation Path in Step 2 before submitting.';
+        inlineFormAlert.className = 'rounded-xl p-3 text-xs font-semibold border bg-rose-50 border-rose-300 text-rose-800';
+        inlineFormAlert.classList.remove('hidden');
+        return;
+      }
+
+      if (notes.trim().length < 10) {
+        inlineFormAlert.textContent =
+          'Please enter concise escalation handoff or resolution notes in Step 3 (or click "+ Load Suggested Runbook Notes").';
+        inlineFormAlert.className = 'rounded-xl p-3 text-xs font-semibold border bg-rose-50 border-rose-300 text-rose-800';
+        inlineFormAlert.classList.remove('hidden');
+        return;
+      }
+
+      inlineFormAlert.classList.add('hidden');
+
+      const evaluation = evaluateSubmission(ticket, chosenPriority, chosenRoute, notes);
+      ticket.userSubmission = evaluation;
+      ticket.status = chosenRoute === 'TIER1_FCR' ? 'RESOLVED' : 'ESCALATED';
+
+      renderAll();
+    });
+
+    // Load suggested runbook notes helper
+    document.getElementById('btnLoadRunbook').addEventListener('click', () => {
+      const ticket = tickets.find((t) => t.id === selectedTicketId);
+      if (ticket) {
+        handoffNotes.value = ticket.suggestedNotes;
+        inlineFormAlert.classList.add('hidden');
+      }
+    });
+
+    // Select ticket handler
+    window.selectTicket = function (id) {
+      selectedTicketId = id;
+      renderQueueList();
+      renderSelectedTicketWorkspace();
+    };
+
+    // Filter tabs click handler
+    function updateFilterTabUI() {
+      document.querySelectorAll('.filter-tab').forEach((btn) => {
+        const isMatch = btn.dataset.filter === currentFilter;
+        btn.className = isMatch
+          ? 'filter-tab active px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-white transition cursor-pointer'
+          : 'filter-tab px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition cursor-pointer';
+      });
+    }
+
+    document.getElementById('filterTabs').addEventListener('click', (e) => {
+      const btn = e.target.closest('.filter-tab');
+      if (!btn) return;
+      currentFilter = btn.dataset.filter;
+      updateFilterTabUI();
+      renderQueueList();
+    });
+
+    // Search input listener
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      renderQueueList();
+    });
+
+    // Toggle Dashboard Annotations (1-6)
+    document.getElementById('btnToggleAnnotations').addEventListener('click', () => {
+      annotationsVisible = !annotationsVisible;
+      document.querySelectorAll('[data-annotation]').forEach((el) => {
+        el.classList.toggle('hidden', !annotationsVisible);
+      });
+      document.getElementById('annotationLegend').classList.toggle('hidden', !annotationsVisible);
+      document.getElementById('annotationBtnLabel').textContent = annotationsVisible
+        ? 'Hide Dashboard Annotations'
+        : 'Toggle Dashboard Annotations';
+    });
+
+    // Reset Simulation Button
+    document.getElementById('btnResetSimulation').addEventListener('click', () => {
+      initSimulation();
+    });
+
+    // Audit Modal Logic
+    const auditModal = document.getElementById('auditModal');
+    const auditModalBody = document.getElementById('auditModalBody');
+
+    document.getElementById('btnOpenAuditLog').addEventListener('click', () => {
+      const completed = tickets.filter((t) => t.userSubmission !== null);
+      if (completed.length === 0) {
+        auditModalBody.innerHTML = `
+          <div class="p-8 text-center text-slate-500">
+            <p class="font-bold text-slate-700 text-sm">No Triage Decisions Logged Yet</p>
+            <p class="mt-1">Select tickets from the queue and submit your priority &amp; routing decisions to populate the Escalation Audit Log.</p>
+          </div>
+        `;
+      } else {
+        auditModalBody.innerHTML = completed
+          .map(
+            (t) => `
+            <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-1.5">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <span class="font-mono font-bold text-slate-900">${t.id}</span>
+                  <span class="font-bold text-slate-800">${t.title}</span>
+                </div>
+                <span class="font-mono font-bold px-2 py-0.5 rounded ${
+                  t.userSubmission.score >= 85
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-amber-100 text-amber-800'
+                }">Accuracy: ${t.userSubmission.score}%</span>
+              </div>
+              <div class="text-slate-600">
+                <strong>Assessed Priority:</strong> ${t.userSubmission.priority} (Optimal: ${t.optimalPriority}) &bull;
+                <strong>Chosen Route:</strong> ${ROUTE_LABELS[t.userSubmission.route]}
+              </div>
+              <div class="text-slate-700 bg-white p-2 rounded border border-slate-200 font-mono text-[11px]">
+                <strong>Handoff Notes:</strong> ${t.userSubmission.notes}
+              </div>
+            </div>
+          `
+          )
+          .join('');
+      }
+      auditModal.classList.remove('hidden');
+    });
+
+    document.getElementById('btnCloseAuditModal').addEventListener('click', () => {
+      auditModal.classList.add('hidden');
+    });
+
+    auditModal.addEventListener('click', (e) => {
+      if (e.target === auditModal) auditModal.classList.add('hidden');
+    });
+
+    // Copy Audit Summary using document.execCommand('copy') for iframe compatibility
+    document.getElementById('btnCopyAuditReport').addEventListener('click', () => {
+      const completed = tickets.filter((t) => t.userSubmission !== null);
+      const summaryLines = completed.length
+        ? completed.map(
+            (t) =>
+              `${t.id} | Priority: ${t.userSubmission.priority} | Route: ${ROUTE_LABELS[t.userSubmission.route]} | Score: ${t.userSubmission.score}%\nNotes: ${t.userSubmission.notes}`
+          )
+        : ['No tickets triaged yet in ServiceDesk Pro simulation.'];
+
+      const textToCopy = `SERVICEDESK PRO — ESCALATION AUDIT LOG\n=====================================\n${summaryLines.join('\n\n')}`;
+      const tempTextArea = document.createElement('textarea');
+      tempTextArea.value = textToCopy;
+      document.body.appendChild(tempTextArea);
+      tempTextArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempTextArea);
+
+      const toast = document.getElementById('copyToast');
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 2400);
+    });
+
+    function renderAll() {
+      updateKpiMetrics();
+      renderQueueList();
+      renderSelectedTicketWorkspace();
+    }
+
+    // Boot application
+    window.addEventListener('DOMContentLoaded', () => {
+      initSimulation();
+      startSlaTicker();
+    });
+  </script>
+</body>
+</html>
